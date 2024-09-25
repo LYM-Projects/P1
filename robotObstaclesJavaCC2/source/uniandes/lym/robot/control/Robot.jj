@@ -114,7 +114,6 @@ TOKEN: /* Nombres de Comandos */
 		|	<TURNTOMY: "turnToMy">
 		|	<TURNTOTHE: "turnToThe">
 		|	<ISBLOCKED: "isBlocked?">
-/* es solo blocked igual facing*/
 		|	<ISFACING: "isFacing?">
 		|	<ZERO: "zero?">
 		|	<NOT: "not">
@@ -136,13 +135,14 @@ TOKEN:
 {
 		<BALLOONS:  "myBallons" >
 		|	<CHIPS:     "myChips"  >
+		|	<BALLOONSHERE: "balloonsHere">
+		|	<CHIPSHERE: "chipsHere">
+		|	<ROOMFORCHIPS: "roomForChips">
+		|	<MYX: "myX">
+		|	<MYY: "myY">
 		| 	<NOMBRE: (["a"-"z","A"-"Z","0"-"9"])+>
 
 }
-
-
-
-
 
 
 //boolean command(uniandes.lym.robot.view.Console sistema) :
@@ -229,18 +229,11 @@ boolean command(Console sistema):
 	void var() :
 	{}
 	{
-    <VAR> <NOMBRE> { String nombreVar = token.image; } <EQUAL>   
+    <VAR> <NOMBRE> { String nombreVar = token.image; } <EQUAL> valor() 
     { 
         variables.put(nombreVar, Integer.parseInt(token.image)); 
     }  
 	}
-/*  revisamos? deveria ser equal valor () ?*/
-
-	void value():
-	{ }
-	{
-	}
-	  
 	
 	void instruccion() :
 	{	int x,y;
@@ -275,7 +268,7 @@ boolean command(Console sistema):
 	{}
 	{
 		( <IF>  "(" condicion() ")" <THEN> bloque() <ELSE> bloque()  <FI> 
-		| <WHILE> "(" condicion() ")" <DO> bloque() <OD>
+		| <DO> "(" condicion() ")" bloque() <OD>
 		| <REP>  valor()  <TIMES> bloque()  <PER> )
 	}
 	
@@ -321,7 +314,8 @@ boolean command(Console sistema):
 	}
 	{
     	( <NUM> { val = Integer.parseInt(token.image); }
-    	| <NOMBRE> { val = obtenerValorVariable(token.image); } 
+    	| <NOMBRE> { val = obtenerValorVariable(token.image); }
+    	| <MYX> | <MYY> | <CHIPS> | <BALLOONS> | <BALLOONSHERE> | <CHIPSHERE> | <ROOMFORCHIPS>
     )
     { return val; }
 
