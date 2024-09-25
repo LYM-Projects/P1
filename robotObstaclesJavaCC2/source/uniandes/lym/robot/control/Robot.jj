@@ -13,7 +13,7 @@ Modificado por Silvia Takahashi
 options 
 {
   
-	LOOKAHEAD=1; 
+	LOOKAHEAD=2; 
 	IGNORE_CASE=true;
 	STATIC = false;
 	
@@ -31,6 +31,7 @@ import java.awt.Point;
 import java.io.*;
 import java.util.Vector;
 import java.util.LinkedList;
+import java.util.HashMap;
 
 @SuppressWarnings("serial")
 public class Robot 
@@ -38,13 +39,21 @@ public class Robot
 
 
 	private RobotWorldDec world;
-	
+	private HashMap<String, Integer> variables = new HashMap<String, Integer>(); // Diccionario de variables
 	
 	void setWorld(RobotWorld w) {
-		world = (RobotWorldDec) w;	
+		world = (RobotWorldDec) w;		
 	}
+	
 
 	String salida=new String();
+
+	int obtenerValorVariable(String nombreVariable){
+    	if (variables.containsKey(nombreVariable)) {
+        	return variables.get(nombreVariable);
+    	}
+    	return 0; 
+  	}
 }
 PARSER_END(Robot)
 
@@ -59,24 +68,61 @@ SKIP:
 TOKEN: /* Nombres de Comandos */
 {
 
-			<MOV:  "Mov">
+			<MOVE:  "Move">
 		| 	<RIGHT: "RIGHT">
 		| 	<PUT: "Put">
 		| 	<PICK: "Pick">
 		|  < POP: "Pop" >
 		|  <GO: "GO" >
         |  < HOP:  "HOP" >		
+		|  < EXEC:  "EXEC" >
+		|  < NEW:  "NEW" >
+		|  < VAR:  "VAR" >
+		|  < MACRO:  "MACRO" >
+		|  < OPEN_BRACE:  "{" >
+		|  < CLOSE_BRACE:  "}" >
+		|  < EQUAL:  "=" >
+		|  < IF:  "if" >
+		| 	< THEN: "then" >
+		| 	< ELSE: "else" >
+		| 	< FI: "fi" >
+		| 	< WHILE: "while" >
+		| 	< DO: "do" >
+		| 	< OD: "od" >
+		| 	< REP: "rep" >
+		| 	< TIMES: "times" >
+		| 	< PER: "per" >
+		|	<LEFT: "left">
+		|	<FRONT: "front">
+		|	<BACK: "back">
+		|  	<BACKWARDS: "backwards"> 
+		|	<NORTH: "north">
+		|	<SOUTH: "south">
+		|	<EAST: "east">
+		|	<WEST: "west">
+		|	<FORWARD: "forward">
+		|	<WALK: "walk">
+		|	<JUMP: "jump">
+		|	<DROP: "drop">
+		|	<GRAB: "grab">
+		|	<LETGO: "letGo">
+		|	<MOVES: "moves">
+		|	<NOP: "nop">
+		|	<SAFEEXE: "safeExe">
+		| 	<TRUE: "true">
+		| 	<FALSE: "false">
+		|	<TURNTOMY: "turnToMy">
+		|	<TURNTOTHE: "turnToThe">
+		|	<ISBLOCKED: "isBlocked?">
+/* es solo blocked igual facing*/
+		|	<ISFACING: "isFacing?">
+		|	<ZERO: "zero?">
+		|	<NOT: "not">
+		
+		
+		
 
 }
-
-TOKEN:
-{
-		<BALLOONS:  "BALLOONS" >
-		|	<CHIPS:     "CHIPS"  >	
-
-}
-
-
 
 TOKEN :
 {
@@ -86,40 +132,55 @@ TOKEN :
 }
 
 
+TOKEN:
+{
+		<BALLOONS:  "myBallons" >
+		|	<CHIPS:     "myChips"  >
+		| 	<NOMBRE: (["a"-"z","A"-"Z","0"-"9"])+>
 
-	//boolean command(uniandes.lym.robot.view.Console sistema) :
-	boolean command(Console sistema):
-	{	
-		
-		int x,y;
-		salida=new String();	
-	}
+}
 
-	
+
+
+
+
+
+//boolean command(uniandes.lym.robot.view.Console sistema) :
+boolean command(Console sistema):
+{	
+	int x,y;
+	salida=new String();	
+}
+
+{
+	(
+	  (
+	   <RIGHT> "(" ")" {world.turnRight();salida = "Command: Turnright";}
+	| 	<MOVE>  "(" x=valor() ")" {world.moveForward(x,false);salida = "Command: Moveforward ";}  
+	| 	<HOP>  "(" x=num() ")" {world.moveForward(x,true);salida = "Command:Jumpforward ";}
+	| 	<GO>  "(" x=num() "," y=num()")" {world.setPostion(x,y);salida = "Command:GO ";}  
+	|  <PUT> "("  put() ")"					  			
+	|  <PICK> "(" get()  ")"	
+	|  < POP > "(" x=num() ")" {world.popBalloons(x); salida = "Comando:  Pop";}
+	) ";" 
+	|  <EXEC>  bloque()  {salida = "Comando:  EXEC Exitoso";}
+	|  <NEW>  (macro() | var()) {salida = "Comando:  NEW Exitoso";}
+
+	) 
+
 	{
-		(		  (
-		   <RIGHT> "(" ")" {world.turnRight();salida = "Command: Turnright";}
-		| 	<MOV>  "(" x=num() ")" {world.moveForward(x,false);salida = "Command: Moveforward ";}  
-		| 	<HOP>  "(" x=num() ")" {world.moveForward(x,true);salida = "Command:Jumpforward ";}
-		| 	<GO>  "(" x=num() "," y=num()")" {world.setPostion(x,y);salida = "Command:GO ";}  
-		|  <PUT> "("  put() ")"					  			
-		|  <PICK> "(" get()  ")"	
-	    |  < POP > "(" x=num() ")" {world.popBalloons(x); salida = "Comando:  Pop";}
-		) ";" 
-
-		{
-		    try {
-	    			 Thread.sleep(900);
-	    	    } catch (InterruptedException e) {
-	    			        System.err.format("IOException: %s%n", e);
-	    		    }
-	    			 
-			sistema.printOutput(salida);
-			return true;
-		})+
-
-    	| <EOF> {return false;} 
+	    try {
+			 Thread.sleep(900);
+	    } catch (InterruptedException e) {
+			        System.err.format("IOException: %s%n", e);
+		    }
+			 
+		sistema.printOutput(salida);
+		return true;
 	}
+	
+    | <EOF> {return false;} 
+}
 
 	void put() :
 	{
@@ -140,6 +201,155 @@ TOKEN :
 		|  	  ( <BALLOONS>   "," f=num() {world.grabBalloons(f);salida="Command:  Pick balloons";})	 
 
 	}
+
+	void bloque() :
+	{}
+	{
+		( <OPEN_BRACE> inst() <CLOSE_BRACE>)
+	}
+	
+	void inst() :
+	{}
+	{
+		( instruccion() ";" ( instruccion() ";" )* )
+	}
+
+	void macro() :
+	{}
+	{
+		( <MACRO> <NOMBRE> "(" param() ")" bloque() )
+	}
+	
+	void param() :
+	{}
+	{
+		( <NOMBRE> ( "," <NOMBRE>)*   )?
+	}
+
+	void var() :
+	{}
+	{
+    <VAR> <NOMBRE> { String nombreVar = token.image; } <EQUAL>   
+    { 
+        variables.put(nombreVar, Integer.parseInt(token.image)); 
+    }  
+	}
+/*  revisamos? deveria ser equal valor () ?*/
+
+	void value():
+	{ }
+	{
+	}
+	  
+	
+	void instruccion() :
+	{	int x,y;
+		salida=new String();}
+	{
+		(  <NOMBRE> "="  valor()  
+		| <NOMBRE> "("  listaParametros() ")" 
+		| <TURNTOMY> "("  dir() ")"
+		| <TURNTOTHE> "("  orient() ")"
+		| <WALK> "(" valor() ")"
+		| <JUMP> "(" valor() ")"
+		| <DROP> "(" valor() ")"
+		| <PICK> "(" valor() ")"
+		| <GRAB> "(" valor() ")"
+		| <LETGO> "(" valor() ")"
+		| <POP> "(" valor() ")"
+		| <MOVES> "(" listaDir() ")"
+		| <NOP>
+		| <SAFEEXE> "("  instruccion() ")"
+/* en vez de instruccion no deberia ser comando? y que es lo sig?*/
+		| control() )
+		| <RIGHT> "(" ")" {world.turnRight();salida = "Command: Turnright";}
+		| 	<MOVE>  "(" x=num() ")" {world.moveForward(x,false);salida = "Command: Moveforward ";}  
+		| 	<HOP>  "(" x=num() ")" {world.moveForward(x,true);salida = "Command:Jumpforward ";}
+		| 	<GO>  "(" x=num() "," y=num()")" {world.setPostion(x,y);salida = "Command:GO ";}  
+		|  <PUT> "("  put() ")"					  			
+		|  <PICK> "(" get()  ")"	
+	    |  < POP > "(" x=num() ")" {world.popBalloons(x); salida = "Comando:  Pop";}
+	}
+	
+	void control() :
+	{}
+	{
+		( <IF>  "(" condicion() ")" <THEN> bloque() <ELSE> bloque()  <FI> 
+		| <WHILE> "(" condicion() ")" <DO> bloque() <OD>
+		| <REP>  valor()  <TIMES> bloque()  <PER> )
+	}
+	
+	void condicion() :
+	{}
+	{
+/* true, false?*/
+		( <TRUE>  
+		| <FALSE> 
+		|  <ISBLOCKED> "("  direccion() ")" 
+		|  <ISFACING> "("  orientacion() ")" 
+		|  <ZERO> "("  valor() ")" 
+		|  <NOT> "("  condicion() ")"  )
+	}
+	
+	void direccion() :
+	{}
+	{
+		( <LEFT> | <RIGHT> | <FRONT> | <BACK>  )
+	}
+	
+	void dir() :
+	{}
+	{
+		( <LEFT> | <RIGHT> | <BACK>  )
+	}
+	
+	void orientacion() :
+	{}
+	{
+		( <NORTH> | <SOUTH> | <EAST> | <WEST> )
+	}
+	
+	void orient() :
+	{}
+	{
+		( <NORTH> | <SOUTH> | <EAST> | <WEST> )
+	}
+	
+	int valor() :
+	{
+    	int val = 0;
+	}
+	{
+    	( <NUM> { val = Integer.parseInt(token.image); }
+    	| <NOMBRE> { val = obtenerValorVariable(token.image); } 
+    )
+    { return val; }
+
+
+    
+ 
+}
+
+	void listaParametros():
+	{}
+	{
+ 	   ( valor() ( "," valor() )*  )? 
+	}
+
+	void listaDir() :
+	{}
+	{
+		(  dirMoves() (","  dirMoves())* )
+	}
+
+	void dirMoves() :
+	{}
+	{
+		( <FORWARD> | <RIGHT> | <LEFT> | <BACKWARDS> )
+	}
+
+
+
 
 	
 	
@@ -167,6 +377,4 @@ TOKEN :
 			}
 			return total;
 		}
-	}
-
-	
+	}	
