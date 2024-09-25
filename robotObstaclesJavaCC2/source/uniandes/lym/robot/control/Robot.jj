@@ -243,17 +243,10 @@ boolean command(Console sistema):
 		| <NOMBRE> "("  listaParametros() ")" 
 		| <TURNTOMY> "("  dir() ")"
 		| <TURNTOTHE> "("  orient() ")"
-		| <WALK> "(" valor() ")"
-		| <JUMP> "(" valor() ")"
-		| <DROP> "(" valor() ")"
-		| <PICK> "(" valor() ")"
-		| <GRAB> "(" valor() ")"
-		| <LETGO> "(" valor() ")"
-		| <POP> "(" valor() ")"
+		| comand()
 		| <MOVES> "(" listaDir() ")"
 		| <NOP>
-		| <SAFEEXE> "("  instruccion() ")"
-/* en vez de instruccion no deberia ser comando? y que es lo sig?*/
+		| <SAFEEXE> "(" comand() ")"
 		| control() )
 		| <RIGHT> "(" ")" {world.turnRight();salida = "Command: Turnright";}
 		| 	<MOVE>  "(" x=num() ")" {world.moveForward(x,false);salida = "Command: Moveforward ";}  
@@ -262,6 +255,18 @@ boolean command(Console sistema):
 		|  <PUT> "("  put() ")"					  			
 		|  <PICK> "(" get()  ")"	
 	    |  < POP > "(" x=num() ")" {world.popBalloons(x); salida = "Comando:  Pop";}
+	}
+
+	void comand() :
+	{}
+	{
+	  <WALK> "(" valor() ")"
+		| <JUMP> "(" valor() ")"
+		| <DROP> "(" valor() ")"
+		| <PICK> "(" valor() ")"
+		| <GRAB> "(" valor() ")"
+		| <LETGO> "(" valor() ")"
+		| <POP> "(" valor() ")"
 	}
 	
 	void control() :
