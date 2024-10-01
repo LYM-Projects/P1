@@ -32,6 +32,8 @@ import java.io.*;
 import java.util.Vector;
 import java.util.LinkedList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 
 @SuppressWarnings("serial")
 public class Robot 
@@ -44,6 +46,129 @@ public class Robot
 	void setWorld(RobotWorld w) {
 		world = (RobotWorldDec) w;		
 	}
+	
+	void ajustarOrientacion(String nuevaOrientacion) {
+	    int currentFacing = world.getFacing(); // Obtenemos la orientación actual
+	
+	    // Logica para cada posible orientacion deseada
+	    switch(nuevaOrientacion) {
+	        case "north":
+	            if (currentFacing == RobotWorld.EAST) {
+	                world.turnRight();
+	                world.turnRight();
+	                world.turnRight();
+	            } else if (currentFacing == RobotWorld.SOUTH) {
+	                world.turnRight();
+	                world.turnRight();
+	            } else if (currentFacing == RobotWorld.WEST) {
+	                world.turnRight();
+	            }
+	            break;
+	
+	        case "south":
+	            if (currentFacing == RobotWorld.WEST) {
+	                world.turnRight();
+	                world.turnRight();
+	                world.turnRight();
+	            } else if (currentFacing == RobotWorld.NORTH) {
+	                world.turnRight();
+	                world.turnRight();
+	            } else if (currentFacing == RobotWorld.EAST) {
+	                world.turnRight();
+	            }
+	            break;
+	
+	        case "east":
+	            if (currentFacing == RobotWorld.NORTH) {
+	                world.turnRight();
+	                world.turnRight();
+	                world.turnRight();
+	            } else if (currentFacing == RobotWorld.SOUTH) {
+	                world.turnRight();
+	            } else if (currentFacing == RobotWorld.WEST) {
+	                world.turnRight();
+	                world.turnRight();
+	            }
+	            break;
+	
+	        case "west":
+	            if (currentFacing == RobotWorld.SOUTH) {
+	                world.turnRight();
+	                world.turnRight();
+	                world.turnRight();
+	            } else if (currentFacing == RobotWorld.EAST) {
+	                world.turnRight();
+	                world.turnRight();
+	            } else if (currentFacing == RobotWorld.NORTH) {
+	                world.turnRight();
+	            }
+	            break;
+	    }
+	
+	    salida = "Command: Turn to the " + nuevaOrientacion;
+	}
+
+	void turnToMyDirection(String direccion) {
+	    if (direccion.equals("left")) {
+	        // Simula girar hacia la izquierda (3 giros a la derecha)
+	        world.turnRight(); 
+	        world.turnRight(); 
+	        world.turnRight();
+	        salida = "Command: Turn to my left";
+	    } else if (direccion.equals("right")) {
+	        // Gira hacia la derecha
+	        world.turnRight();
+	        salida = "Command: Turn to my right";
+	    } else if (direccion.equals("back")) {
+	        // Simula girar hacia atrás (2 giros a la derecha)
+	        world.turnRight();
+	        world.turnRight();
+	        salida = "Command: Turn to my back";
+	    }
+	}
+
+	void walk(int pasos) {
+	    world.moveForward(pasos, false);
+	    salida = "Command: Walk " + pasos + " steps forward";
+	}
+
+
+	void moveInDirections(List<String> direcciones) {
+	  int orientacionInicial = world.getFacing();
+	    for (String direccion : direcciones) {
+	        switch (direccion) {
+	            case "forward":
+	                world.moveForward(1, false); // Mueve un paso hacia adelante
+	                break;
+	            case "right":
+	                world.turnRight(); // Gira a la derecha
+	                break;
+	            case "left":
+	                // Simulamos un giro a la izquierda con tres giros a la derecha
+	                world.turnRight();
+	                world.turnRight();
+	                world.turnRight();
+	                break;
+	            case "backwards":
+	                // Gira 180 grados para moverse hacia atrás
+	                world.turnRight();
+	                world.turnRight();
+	                world.moveForward(1, false); // Mueve un paso hacia atrás
+	                // Vuelve a girar 180 grados para restaurar la orientación
+	                world.turnRight();
+	                world.turnRight();
+	                break;
+	        }
+	    }
+
+	    // Restaurar la orientación inicial si es necesario
+	    while (world.getFacing() != orientacionInicial) {
+	        world.turnRight(); // Seguimos girando a la derecha hasta que la orientación inicial sea restaurada
+	    }
+	    salida = "Command: Moves executed";
+	}
+
+	
 	
 
 	String salida=new String();
@@ -231,23 +356,42 @@ boolean command(Console sistema):
 	{
     <VAR> <NOMBRE> { String nombreVar = token.image; } <EQUAL> valor() 
     { 
-        variables.put(nombreVar, Integer.parseInt(token.image)); 
+        variables.put(nombreVar, Integer.parseInt(token.image));
+        salida = "Command:  Pick chips"; 
     }  
 	}
 	
 	void instruccion() :
 	{	int x,y;
-		salida=new String();}
+		salida=new String();
+		String direccion;
+		String orientacion;
+		List<String> direcciones;
+		}
 	{
 		(  <NOMBRE> "="  valor()  
 		| <NOMBRE> "("  listaParametros() ")" 
-		| <TURNTOMY> "("  dir() ")"
-		| <TURNTOTHE> "("  orient() ")"
+		| <TURNTOMY> "(" direccion = dir() ")" 
+	      {
+	          turnToMyDirection(direccion);
+	      }
+          
+		| <TURNTOTHE> "(" orientacion=orient() ")" 
+	      {
+	          ajustarOrientacion(orientacion);
+	      }
+	      
 		| comand()
-		| <MOVES> "(" listaDir() ")"
+		
+		|<MOVES> "(" direcciones = listaDir() ")" 
+	      {
+	          moveInDirections(direcciones); // Pasamos la lista de movimientos a la función
+	      }
 		| <NOP>
 		| <SAFEEXE> "(" comand() ")"
 		| control() )
+
+		
 		| <RIGHT> "(" ")" {world.turnRight();salida = "Command: Turnright";}
 		| 	<MOVE>  "(" x=num() ")" {world.moveForward(x,false);salida = "Command: Moveforward ";}  
 		| 	<HOP>  "(" x=num() ")" {world.moveForward(x,true);salida = "Command:Jumpforward ";}
@@ -258,9 +402,12 @@ boolean command(Console sistema):
 	}
 
 	void comand() :
-	{}
+	{int pasos;}
 	{
-	  <WALK> "(" valor() ")"
+	  	 <WALK> "(" pasos = valor() ")" 
+	      {
+	          walk(pasos); 
+	      }
 		| <JUMP> "(" valor() ")"
 		| <DROP> "(" valor() ")"
 		| <PICK> "(" valor() ")"
@@ -280,11 +427,11 @@ boolean command(Console sistema):
 	void condicion() :
 	{}
 	{
-/* true, false?*/
+	/* true, false?*/
 		( <TRUE>  
 		| <FALSE> 
 		|  <ISBLOCKED> "("  direccion() ")" 
-		|  <ISFACING> "("  orientacion() ")" 
+		|  <ISFACING> "("  orient() ")" 
 		|  <ZERO> "("  valor() ")" 
 		|  <NOT> "("  condicion() ")"  )
 	}
@@ -295,24 +442,33 @@ boolean command(Console sistema):
 		( <LEFT> | <RIGHT> | <FRONT> | <BACK>  )
 	}
 	
-	void dir() :
-	{}
+	String dir() :
 	{
-		( <LEFT> | <RIGHT> | <BACK>  )
+	    String direccion = "";
+	}
+	{
+	    (
+	      <LEFT> { direccion = "left"; }
+	    | <RIGHT> { direccion = "right"; }
+	    | <BACK> { direccion = "back"; }
+	    )
+	    { return direccion; }
 	}
 	
-	void orientacion() :
-	{}
-	{
-		( <NORTH> | <SOUTH> | <EAST> | <WEST> )
-	}
 	
-	void orient() :
-	{}
+	String orient() :
 	{
-		( <NORTH> | <SOUTH> | <EAST> | <WEST> )
+	    String orientacion = "";
 	}
-	
+	{
+	    (
+	      <NORTH> { orientacion = "north"; }
+	    | <SOUTH> { orientacion = "south"; }
+	    | <EAST> { orientacion = "east"; }
+	    | <WEST> { orientacion = "west"; }
+	    )
+	    { return orientacion; }
+}
 	int valor() :
 	{
     	int val = 0;
@@ -320,7 +476,13 @@ boolean command(Console sistema):
 	{
     	( <NUM> { val = Integer.parseInt(token.image); }
     	| <NOMBRE> { val = obtenerValorVariable(token.image); }
-    	| <MYX> | <MYY> | <CHIPS> | <BALLOONS> | <BALLOONSHERE> | <CHIPSHERE> | <ROOMFORCHIPS>
+    	| <MYX>
+    	| <MYY>
+    	| <CHIPS>
+    	| <BALLOONS>
+    	| <BALLOONSHERE>
+    	| <CHIPSHERE>
+    	| <ROOMFORCHIPS>
     )
     { return val; }
 
@@ -335,23 +497,31 @@ boolean command(Console sistema):
  	   ( valor() ( "," valor() )*  )? 
 	}
 
-	void listaDir() :
-	{}
+	List<String> listaDir():
 	{
-		(  dirMoves() (","  dirMoves())* )
+	    List<String> direcciones = new ArrayList<String>();
+	    String dir;
+	}
+	{
+	    dir = dirMoves() { direcciones.add(dir); }
+	    ("," dir = dirMoves() { direcciones.add(dir); })*
+	    { return direcciones; }
 	}
 
-	void dirMoves() :
-	{}
+	String dirMoves() :
 	{
-		( <FORWARD> | <RIGHT> | <LEFT> | <BACKWARDS> )
+	    String direccion = "";
+	}
+	{
+	    (
+	      <FORWARD> { direccion = "forward"; }
+	    | <RIGHT> { direccion = "right"; }
+	    | <LEFT> { direccion = "left"; }
+	    | <BACKWARDS> { direccion = "backwards"; }
+	    )
+	    { return direccion; }
 	}
 
-
-
-
-	
-	
 
 	/**
 	 * Unsigned decimal number
